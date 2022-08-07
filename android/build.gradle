@@ -1,3 +1,11 @@
+def safeExtGet(prop, fallback) {
+    rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+}
+
+def isNewArchitectureEnabled() {
+    return project.hasProperty("newArchEnabled") && project.newArchEnabled == "true"
+}
+
 buildscript {
     repositories {
         google()
@@ -5,15 +13,18 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.2.1'
+        classpath 'com.android.tools.build:gradle:7.2.1'
     }
 }
 
 apply plugin: 'com.android.library'
 
+if (isNewArchitectureEnabled()) {
+    apply plugin: 'com.facebook.react'
+}
+
 android {
-    compileSdkVersion rootProject.ext.compileSdkVersion
-    buildToolsVersion rootProject.ext.buildToolsVersion
+    compileSdkVersion safeExtGet('compileSdkVersion', 31)
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -21,15 +32,25 @@ android {
     }
 
     defaultConfig {
-        minSdkVersion rootProject.ext.minSdkVersion
-        targetSdkVersion rootProject.ext.targetSdkVersion
+        minSdkVersion safeExtGet('minSdkVersion', 21)
+        targetSdkVersion safeExtGet('targetSdkVersion', 31)
         versionCode 1
         versionName "1.0"
+        buildConfigField("boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString())
     }
     lintOptions {
         abortOnError false
     }
-}
+    sourceSets {
+        main {
+            if (isNewArchitectureEnabled()) {
+                java.srcDirs += ['src/newarch']
+           } else {
+                java.srcDirs += ['src/oldarch']
+            }
+        }
+    }
+} 
 
 repositories {
     mavenCentral()
@@ -38,4 +59,12 @@ repositories {
 dependencies {
     implementation "com.facebook.react:react-native:+"
     implementation group: 'net.lingala.zip4j', name: 'zip4j', version: '2.6.4'
+}
+
+if (isNewArchitectureEnabled()) {
+     react {
+         jsRootDir = file("../src/")
+         libraryName = "rnziparchive"
+         codegenJavaPackageName = "com.rnziparchive"
+     }
 }

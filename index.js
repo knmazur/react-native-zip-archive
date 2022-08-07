@@ -2,7 +2,9 @@ import ReactNative from "react-native";
 
 const { NativeEventEmitter, NativeModules } = ReactNative;
 
-const RNZipArchive = NativeModules.RNZipArchive;
+const isTurboModuleEnabled = global.__turboModuleProxy != null;
+
+const RNZipArchive = isTurboModuleEnabled ? require("./src/NativeRNZipArchive").default : NativeModules.RNZipArchive
 
 const rnzaEmitter = new NativeEventEmitter(RNZipArchive);
 
